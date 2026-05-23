@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://prinse.jo3.org/sitemap.xml
