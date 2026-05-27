@@ -31,7 +31,6 @@
             background: var(--bg-dark); 
             color: var(--text-main); 
             overflow: hidden; 
-            /* Anti-copy / Anti-select protection */
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
@@ -41,18 +40,18 @@
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
 
-        /* Modals */
+        /* Modals - Reverted to Bottom Style */
         .modal-overlay { 
             position: fixed; top:0; left:0; width:100%; height:100%; 
             background: rgba(0,0,0,0.7); backdrop-filter: var(--blur); 
-            z-index: 9000; display:none; align-items:center; justify-content:center; 
+            z-index: 9000; display:none; align-items:flex-end; justify-content:center; 
             transition: opacity 0.3s; cursor: pointer; 
         }
         .modal-card { 
-            background: var(--panel-solid); width: 90%; max-width: 500px; 
-            border-radius: 25px; padding: 25px 20px; 
+            background: var(--panel-solid); width: 100%; max-width: 600px; 
+            border-radius: 25px 25px 0 0; padding: 25px 20px; 
             box-shadow: 0 -10px 40px rgba(0,0,0,0.5); 
-            transform: translateY(10%); transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1); 
+            transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1); 
             cursor: default; max-height: 85vh; overflow-y: auto; margin: 0 auto; 
             border-top: 1px solid rgba(255,255,255,0.05); 
         }
@@ -209,7 +208,6 @@
         .bubble { 
             max-width: 75%; padding: 12px 16px; border-radius: 20px; font-size: 15px; 
             position: relative; 
-            /* Fixed Overflow/Long Message Bug */
             word-wrap: break-word; 
             overflow-wrap: anywhere; 
             word-break: break-word;
@@ -421,7 +419,7 @@
 <body>
 
     <audio id="ringtone-audio" loop src="https://assets.mixkit.co/active_storage/sfx/1357/1357-preview.mp3"></audio>
-    <audio id="msg-audio" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"></audio>
+    <audio id="msg-audio" src=""></audio>
 
     <div id="premium-call-layer" class="premium-call-alert">
         <div class="premium-call-card">
@@ -672,7 +670,7 @@ function downloadAPK() {
         window.hiddenUsers = JSON.parse(localStorage.getItem('xit_hidden_users') || '{}');
 
         const ringtoneAudio = document.getElementById('ringtone-audio');
-        const msgAudio = document.getElementById('msg-audio');
+        // const msgAudio = document.getElementById('msg-audio'); // Muted as per user request
         
         function requestNotificationPerm() { 
             if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") { 
@@ -714,8 +712,8 @@ function downloadAPK() {
             const pass = document.getElementById('pass-input').value.trim();
             if(!name || !pass) return;
             
+            // Prime ringtone for Safari/Mobile auto-play policy 
             ringtoneAudio.muted = false; ringtoneAudio.play().then(()=>ringtoneAudio.pause()).catch(()=>{}); 
-            msgAudio.muted = false; msgAudio.play().then(()=>msgAudio.pause()).catch(()=>{});
 
             const snap = await db.ref('registered_users/'+name).once('value');
             if(snap.exists()){ 
@@ -798,7 +796,8 @@ function downloadAPK() {
                         if(lastMsg.ts > (window.lastRead[room]||0) && lastMsg.from !== myUser) { 
                             el.classList.add('unread'); 
                             if(firstLoadComplete && room !== activeRoom) { 
-                                msgAudio.play().catch(()=>{}); notifyUser("New Message", `Message from ${lastMsg.from}`); 
+                                // Message Sound removed per instruction
+                                notifyUser("New Message", `Message from ${lastMsg.from}`); 
                             } 
                         } else el.classList.remove('unread'); 
                     } 
@@ -884,7 +883,7 @@ function downloadAPK() {
                     else if(m.type === 'video') content += `<video src="${m.data}" controls></video><br><small style="cursor:pointer; color:var(--primary); font-weight:bold;" onclick="openMediaViewer('${m.data}', 'video')">⛶ Full Screen</small>`;
                     else if(m.type === 'audio') content += `<audio src="${m.data}" controls></audio>`;
                     else if(m.type === 'document') content += `<div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:8px; margin-top:5px; display:flex; align-items:center; gap:10px;"><span style="font-size:24px;">📄</span><a href="${m.data}" target="_blank" style="color:inherit; font-weight:bold; flex:1; text-decoration:none;">👁️ View Document</a></div>`;
-                    else content += urlify(m.data); // URLIFY now includes escapeHTML to fix XSS execution
+                    else content += urlify(m.data); 
                     
                     let msgDateObj = new Date(m.ts); let formattedTime = msgDateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                     content += `<div class="msg-time">${formattedTime}</div>`;
@@ -1090,7 +1089,7 @@ function downloadAPK() {
         function openCreateRoomUI() { showModal("Create Private Room", `<input type="text" id="pr-name" placeholder="Enter Room Name"><input type="password" id="pr-pass" placeholder="Create Password">`, async () => { const n = document.getElementById('pr-name').value.trim(), p = document.getElementById('pr-pass').value.trim(); if(!n || !p) return; if((await db.ref('private_rooms/'+n).once('value')).exists()) return alert("Room Name taken!"); await db.ref('private_rooms/'+n).set({password: p, users: {[myUser]: true}}); closeModal(); openChat(n, "🔒 " + n, 'private'); }); }
         function openJoinRoomUI() { showModal("Join Private Room", `<input type="text" id="pr-name" placeholder="Room Name"><input type="password" id="pr-pass" placeholder="Password">`, async () => { const n = document.getElementById('pr-name').value.trim(), p = document.getElementById('pr-pass').value.trim(); if(!n || !p) return; const snap = await db.ref('private_rooms/'+n).once('value'); if(!snap.exists() || snap.val().password !== p) return alert("Invalid details!"); await db.ref('private_rooms/'+n+'/users/'+myUser).set(true); closeModal(); openChat(n, "🔒 " + n, 'private'); }); }
         
-        // --- Private Room Data Clear Logic ---
+        // --- Private Room Data Clear & Auto-Delete Logic ---
         function exitPrivateRoomFromName(rName) { activeRoom = rName; exitPrivateRoom(); }
         function exitPrivateRoom() { 
             const roomToExit = activeRoom; 
@@ -1102,7 +1101,11 @@ function downloadAPK() {
         async function confirmExitRoom(roomToExit, clearData) {
             closeModal();
             if(activeRoom === roomToExit) closeChat();
+            
+            // Remove user from room
             await db.ref('private_rooms/'+roomToExit+'/users/'+myUser).remove();
+            
+            // If clear data is checked, delete their messages
             if(clearData) {
                 db.ref('private_messages/'+roomToExit).once('value', snap => {
                     if(snap.exists()) {
@@ -1115,19 +1118,46 @@ function downloadAPK() {
                 });
                 alert("Your data cleared successfully!");
             }
+
+            // AUTO-DELETE room if no users left
+            db.ref('private_rooms/'+roomToExit+'/users').once('value', snap => {
+                if(!snap.exists()) {
+                    db.ref('private_rooms/'+roomToExit).remove();
+                    db.ref('private_messages/'+roomToExit).remove();
+                }
+            });
         }
         
+        // --- Share Room Fixed (Shows Friends List) ---
         function openShareLinkModal() { 
-            db.ref('private_rooms/'+activeRoom+'/users').once('value', snap => {
-                let users = snap.exists() ? Object.keys(snap.val()).join(', ') : 'None';
-                let url = window.location.origin + window.location.pathname + "?room=" + encodeURIComponent(activeRoom); 
-                let html = `
-                    <p style="margin-bottom:15px; color:var(--primary); font-weight:bold;">Active Users: <span style="color:#fff; font-weight:normal;">${users}</span></p>
-                    <p style="margin-bottom:15px;">Share this link to invite others!</p>
-                    <button class="btn-primary" onclick="navigator.clipboard.writeText('${url}').then(()=>alert('Copied!'))">📋 Copy Link</button>
-                    <button class="btn-primary" style="background:#25D366; color:white;" onclick="window.open('whatsapp://send?text=' + encodeURIComponent('Join secure room: ${url}'))">💬 WhatsApp</button>`; 
-                showModal("Share Room", html, null, false); 
+            let url = window.location.origin + window.location.pathname + "?room=" + encodeURIComponent(activeRoom); 
+            
+            let html = `
+                <p style="margin-bottom:10px; font-size:14px; color:#aaa;">Forward this room to your chat list:</p>
+                <div style="max-height: 25vh; overflow-y:auto; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 10px;">
+            `;
+            
+            let hasFriends = false;
+            Object.values(window.myPeers).forEach(p => { 
+                hasFriends = true;
+                html += `<div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <b style="font-size:15px; color:#fff;">${p.peer}</b>
+                            <button class="btn-primary" style="width:auto; padding:6px 15px; margin:0; border-radius:8px; font-size:13px;" onclick="shareRoomToPeer('${p.room}')">Forward</button>
+                         </div>`;
             });
+            if(!hasFriends) html += `<p style="color:#777; font-size:13px; text-align:center;">No friends in your chat list yet.</p>`;
+            
+            html += `</div>
+                <button class="btn-primary" onclick="navigator.clipboard.writeText('${url}').then(()=>alert('Copied!'))">📋 Copy Link</button>
+                <button class="btn-primary" style="background:#25D366; color:white;" onclick="window.open('whatsapp://send?text=' + encodeURIComponent('Join secure room: ${url}'))">💬 WhatsApp</button>`; 
+            
+            showModal("Share Room", html, null, false); 
+        }
+
+        function shareRoomToPeer(targetRoom) {
+            let msg = `Join my secure private room: ${activeRoom}\nPassword is required.`;
+            db.ref('messages/'+targetRoom).push().set({ from: myUser, data: msg, type: 'text', ts: Date.now() });
+            alert("Sent to contact!");
         }
 
         function makeLongPressable(el, onLongPress, onClick) { let pressTimer = null; let isDragging = false; let startX, startY; el.addEventListener('touchstart', e => { startX = e.touches[0].clientX; startY = e.touches[0].clientY; isDragging = false; pressTimer = setTimeout(() => { onLongPress(); pressTimer=null; }, 500); }, {passive:true}); el.addEventListener('touchmove', e => { if(Math.abs(e.touches[0].clientX - startX) > 10 || Math.abs(e.touches[0].clientY - startY) > 10) { isDragging = true; if(pressTimer) clearTimeout(pressTimer); } }, {passive:true}); el.addEventListener('touchend', e => { if(pressTimer) { clearTimeout(pressTimer); if(!isDragging && onClick) onClick(e); } }); el.addEventListener('mousedown', e => { pressTimer = setTimeout(() => { onLongPress(); pressTimer=null; }, 500); }); el.addEventListener('mousemove', () => { if(pressTimer) clearTimeout(pressTimer); }); el.addEventListener('mouseup', e => { if(pressTimer) { clearTimeout(pressTimer); if(onClick && e.button===0) onClick(e); } }); el.addEventListener('contextmenu', e => { e.preventDefault(); onLongPress(); }); }
@@ -1162,7 +1192,7 @@ function downloadAPK() {
         }
 
         // ==========================================
-        // FIXED STABLE WEBRTC LOGIC
+        // FIXED STABLE WEBRTC LOGIC (Cross-Device Compatible)
         // ==========================================
         const iceServers = { iceServers: [{ urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun2.l.google.com:19302' }]};
         let pc = null; let localStream = null; let remoteStream = null; let currentCallRef = null; 
@@ -1193,7 +1223,10 @@ function downloadAPK() {
             isVideoCall = (type === 'video'); 
             
             try { 
-                localStream = await navigator.mediaDevices.getUserMedia({ video: isVideoCall ? { facingMode: 'user' } : false, audio: true }); 
+                let constraints = { audio: true };
+                if (isVideoCall) constraints.video = { facingMode: "user" };
+
+                localStream = await navigator.mediaDevices.getUserMedia(constraints); 
                 document.getElementById('local-video').srcObject = localStream; isFrontCamera = true; 
                 
                 let callScrn = document.getElementById('call-screen'); callScrn.style.display = 'flex'; 
@@ -1258,7 +1291,7 @@ function downloadAPK() {
                     }
                 });
 
-            } catch(e) { console.error(e); alert("Camera/Mic Permission Denied!"); endCallLocal(); } 
+            } catch(e) { console.error(e); alert("Camera/Mic Permission Denied! Allow permissions in browser."); endCallLocal(); } 
         }
 
         // --- ENHANCED INCOMING CALL LAYER LISTENERS ---
@@ -1272,11 +1305,14 @@ function downloadAPK() {
                         ringtoneAudio.play().catch(()=>{}); 
                         notifyUser("Incoming Call", `Call from ${incomingCallObj.caller}`); 
                         
-                        // Render onto Premium HUD Overlay
                         document.getElementById('p-call-avatar').innerText = incomingCallObj.caller[0];
                         document.getElementById('p-call-username').innerText = incomingCallObj.caller;
                         document.getElementById('p-call-type').innerText = `INCOMING ${incomingCallObj.type} CALL`;
-                        document.getElementById('premium-call-layer').style.display = 'flex';
+                        
+                        // FIX: Explicitly forcing Z-index & Display to ensure it shows over everything
+                        let pCallLayer = document.getElementById('premium-call-layer');
+                        pCallLayer.style.display = 'flex';
+                        pCallLayer.style.zIndex = '999999'; 
                     }
                 } else if(!snap.exists()) {
                     if(incomingCallObj) {
@@ -1301,7 +1337,10 @@ function downloadAPK() {
             localStorage.setItem('xit_active_call_role', 'received');
 
             try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: isVideoCall ? { facingMode: 'user' } : false, audio: true });
+                let constraints = { audio: true };
+                if (isVideoCall) constraints.video = { facingMode: "user" };
+
+                localStream = await navigator.mediaDevices.getUserMedia(constraints);
                 document.getElementById('local-video').srcObject = localStream; isFrontCamera = true;
                 
                 let callScrn = document.getElementById('call-screen'); callScrn.style.display = 'flex';
@@ -1329,7 +1368,7 @@ function downloadAPK() {
                 pc.onicecandidate = event => { if(event.candidate) currentCallRef.child('calleeCandidates').push(event.candidate.toJSON()); };
 
                 await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-                // WebRTC FIX: Flush Callee ICE queue immediately after setRemoteDescription
+                
                 calleeQueue.forEach(c => pc.addIceCandidate(c));
                 calleeQueue = [];
 
@@ -1355,7 +1394,7 @@ function downloadAPK() {
                 db.ref(`incoming_calls/${myUser}`).remove();
                 incomingCallObj = null;
 
-            } catch(e) { console.error(e); alert("Camera/Mic Permission Denied!"); rejectCall(); }
+            } catch(e) { console.error(e); alert("Camera/Mic Permission Denied! Check browser settings."); rejectCall(); }
         }
 
         function rejectCall() { 
@@ -1398,7 +1437,32 @@ function downloadAPK() {
         
         function toggleMute() { if(localStream) { let audioTrack = localStream.getAudioTracks()[0]; if(audioTrack) { audioTrack.enabled = !audioTrack.enabled; let btn = document.getElementById('toggle-mic-btn'); if(audioTrack.enabled) { btn.style.background = 'rgba(255,255,255,0.1)'; btn.style.color = 'white'; } else { btn.style.background = 'rgba(255,71,87,0.2)'; btn.style.color = 'var(--danger)'; } } } }
         function toggleVideo() { if(localStream && isVideoCall) { let videoTrack = localStream.getVideoTracks()[0]; if(videoTrack) { videoTrack.enabled = !videoTrack.enabled; let btn = document.getElementById('toggle-vid-btn'); if(videoTrack.enabled) { btn.style.background = 'rgba(255,255,255,0.1)'; btn.style.color = 'white'; } else { btn.style.background = 'rgba(255,71,87,0.2)'; btn.style.color = 'var(--danger)'; } } } }
-        async function flipCamera() { if (!localStream || !isVideoCall) return; isFrontCamera = !isFrontCamera; const videoTrack = localStream.getVideoTracks()[0]; try { const newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: isFrontCamera ? 'user' : 'environment' } }); const newVideoTrack = newStream.getVideoTracks()[0]; localStream.removeTrack(videoTrack); localStream.addTrack(newVideoTrack); document.getElementById('local-video').srcObject = localStream; if(pc) { const sender = pc.getSenders().find(s => s.track.kind === 'video'); if (sender) sender.replaceTrack(newVideoTrack); } videoTrack.stop(); } catch (e) { isFrontCamera = !isFrontCamera; } }
+        
+        // --- Fixed Flip Camera (Handles Mobile Constraint Errors) ---
+        async function flipCamera() { 
+            if (!localStream || !isVideoCall) return; 
+            isFrontCamera = !isFrontCamera; 
+            const videoTrack = localStream.getVideoTracks()[0]; 
+            if(videoTrack) videoTrack.stop(); 
+            
+            try { 
+                const newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: isFrontCamera ? 'user' : 'environment' }, audio: false }); 
+                const newVideoTrack = newStream.getVideoTracks()[0]; 
+                localStream.removeTrack(videoTrack); 
+                localStream.addTrack(newVideoTrack); 
+                document.getElementById('local-video').srcObject = localStream; 
+                
+                if(pc) { 
+                    const sender = pc.getSenders().find(s => s.track && s.track.kind === 'video'); 
+                    if (sender) sender.replaceTrack(newVideoTrack); 
+                } 
+            } catch (e) { 
+                console.error(e); 
+                alert("Camera switch failed! Device may not support this.");
+                isFrontCamera = !isFrontCamera; 
+            } 
+        }
+
         function toggleSpeaker() { isSpeakerOn = !isSpeakerOn; const btn = document.getElementById('toggle-speaker-btn'); if(isSpeakerOn) { btn.style.background = 'rgba(255,255,255,0.1)'; btn.style.color = 'white'; } else { btn.style.background = 'rgba(255,71,87,0.2)'; btn.style.color = 'var(--danger)'; } if(document.getElementById('remote-video')) document.getElementById('remote-video').volume = isSpeakerOn ? 1.0 : 0.2; }
 
         const params = new URLSearchParams(window.location.search); const linkRoom = params.get('room');
