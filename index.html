@@ -40,7 +40,7 @@
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
 
-        /* Modals - Reverted to Bottom Style */
+        /* Modals - Bottom Style */
         .modal-overlay { 
             position: fixed; top:0; left:0; width:100%; height:100%; 
             background: rgba(0,0,0,0.7); backdrop-filter: var(--blur); 
@@ -66,21 +66,25 @@
             border-color: var(--primary); box-shadow: 0 0 10px var(--primary-glow); 
         }
 
-        /* Enhanced High-Fidelity Call Alert Screen Layout */
+        /* FIXED: Ultra-Responsive & Cross-Device Compatible Call Alert Screen */
         .premium-call-alert {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(5, 8, 15, 0.85); backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px); z-index: 99999;
+            position: fixed !important; 
+            top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; 
+            width: 100vw !important; height: 100vh !important;
+            background: rgba(5, 8, 15, 0.9) !important; 
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); 
+            z-index: 2147483647 !important; /* Forces absolute top layer */
             display: none; flex-direction: column; align-items: center; justify-content: center;
             animation: fadeIn 0.4s ease;
+            transform: translateZ(0); /* Hardware acceleration fix for Tablets/iOS */
         }
         .premium-call-card {
             background: #111622; border: 1px solid rgba(0, 229, 255, 0.15);
-            border-radius: 30px; width: 88%; max-width: 380px; padding: 35px 25px;
-            text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.6), 0 0 40px rgba(0,229,255,0.05);
+            border-radius: 30px; width: 90%; max-width: 400px; padding: 40px 25px;
+            text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 40px rgba(0,229,255,0.1);
             animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
-        .pulse-avatar-container { position: relative; width: 100px; height: 100px; margin: 0 auto 25px; }
+        .pulse-avatar-container { position: relative; width: 110px; height: 110px; margin: 0 auto 25px; }
         .pulse-avatar-bg {
             position: absolute; top:0; left:0; width:100%; height:100%;
             background: linear-gradient(135deg, #00e5ff, #11998e);
@@ -89,14 +93,14 @@
         .pulse-avatar-main {
             position: relative; width: 100%; height: 100%; border-radius: 50%;
             background: #1a2333; border: 2px solid var(--primary); display: flex;
-            align-items: center; justify-content: center; font-size: 38px; font-weight: 800;
+            align-items: center; justify-content: center; font-size: 42px; font-weight: 800;
             color: var(--primary); text-transform: uppercase; box-shadow: 0 0 20px var(--primary-glow);
         }
-        .premium-call-actions { display: flex; gap: 15px; width: 100%; margin-top: 30px; }
+        .premium-call-actions { display: flex; gap: 15px; width: 100%; margin-top: 35px; }
         .p-call-btn {
-            flex: 1; padding: 16px; border: none; border-radius: 16px; font-weight: 800;
-            font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); letter-spacing: 0.5px;
+            flex: 1; padding: 18px; border: none; border-radius: 18px; font-weight: 800;
+            font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); letter-spacing: 0.5px;
         }
         .p-call-decline { background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%); color: white; }
         .p-call-accept { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: #000; }
@@ -201,7 +205,9 @@
             flex: 1; overflow-y: auto; padding: 20px; display: flex; 
             flex-direction: column; gap: 15px; scroll-behavior: smooth; 
         }
-        .msg-wrapper { display:flex; align-items:center; width:100%; position:relative; overflow: hidden;}
+        
+        .msg-wrapper { display:flex; align-items:center; width:100%; position:relative; overflow: hidden; flex-shrink: 0;}
+        
         .sent-wrap { justify-content:flex-end; }
         .recv-wrap { justify-content:flex-start; }
 
@@ -670,7 +676,6 @@ function downloadAPK() {
         window.hiddenUsers = JSON.parse(localStorage.getItem('xit_hidden_users') || '{}');
 
         const ringtoneAudio = document.getElementById('ringtone-audio');
-        // const msgAudio = document.getElementById('msg-audio'); // Muted as per user request
         
         function requestNotificationPerm() { 
             if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") { 
@@ -712,7 +717,6 @@ function downloadAPK() {
             const pass = document.getElementById('pass-input').value.trim();
             if(!name || !pass) return;
             
-            // Prime ringtone for Safari/Mobile auto-play policy 
             ringtoneAudio.muted = false; ringtoneAudio.play().then(()=>ringtoneAudio.pause()).catch(()=>{}); 
 
             const snap = await db.ref('registered_users/'+name).once('value');
@@ -796,7 +800,6 @@ function downloadAPK() {
                         if(lastMsg.ts > (window.lastRead[room]||0) && lastMsg.from !== myUser) { 
                             el.classList.add('unread'); 
                             if(firstLoadComplete && room !== activeRoom) { 
-                                // Message Sound removed per instruction
                                 notifyUser("New Message", `Message from ${lastMsg.from}`); 
                             } 
                         } else el.classList.remove('unread'); 
@@ -898,7 +901,9 @@ function downloadAPK() {
                     bubble.addEventListener('mouseup', e => { if(pressTimer) clearTimeout(pressTimer); });
                     bubble.addEventListener('contextmenu', e => { e.preventDefault(); showMsgActionMenu(m); });
                 });
-                flow.scrollTop = flow.scrollHeight; window.lastRead[room] = Date.now(); localStorage.setItem('xit_reads', JSON.stringify(window.lastRead));
+                
+                setTimeout(() => { flow.scrollTop = flow.scrollHeight; }, 100);
+                window.lastRead[room] = Date.now(); localStorage.setItem('xit_reads', JSON.stringify(window.lastRead));
             });
         }
 
@@ -1089,7 +1094,6 @@ function downloadAPK() {
         function openCreateRoomUI() { showModal("Create Private Room", `<input type="text" id="pr-name" placeholder="Enter Room Name"><input type="password" id="pr-pass" placeholder="Create Password">`, async () => { const n = document.getElementById('pr-name').value.trim(), p = document.getElementById('pr-pass').value.trim(); if(!n || !p) return; if((await db.ref('private_rooms/'+n).once('value')).exists()) return alert("Room Name taken!"); await db.ref('private_rooms/'+n).set({password: p, users: {[myUser]: true}}); closeModal(); openChat(n, "🔒 " + n, 'private'); }); }
         function openJoinRoomUI() { showModal("Join Private Room", `<input type="text" id="pr-name" placeholder="Room Name"><input type="password" id="pr-pass" placeholder="Password">`, async () => { const n = document.getElementById('pr-name').value.trim(), p = document.getElementById('pr-pass').value.trim(); if(!n || !p) return; const snap = await db.ref('private_rooms/'+n).once('value'); if(!snap.exists() || snap.val().password !== p) return alert("Invalid details!"); await db.ref('private_rooms/'+n+'/users/'+myUser).set(true); closeModal(); openChat(n, "🔒 " + n, 'private'); }); }
         
-        // --- Private Room Data Clear & Auto-Delete Logic ---
         function exitPrivateRoomFromName(rName) { activeRoom = rName; exitPrivateRoom(); }
         function exitPrivateRoom() { 
             const roomToExit = activeRoom; 
@@ -1102,10 +1106,8 @@ function downloadAPK() {
             closeModal();
             if(activeRoom === roomToExit) closeChat();
             
-            // Remove user from room
             await db.ref('private_rooms/'+roomToExit+'/users/'+myUser).remove();
             
-            // If clear data is checked, delete their messages
             if(clearData) {
                 db.ref('private_messages/'+roomToExit).once('value', snap => {
                     if(snap.exists()) {
@@ -1119,7 +1121,6 @@ function downloadAPK() {
                 alert("Your data cleared successfully!");
             }
 
-            // AUTO-DELETE room if no users left
             db.ref('private_rooms/'+roomToExit+'/users').once('value', snap => {
                 if(!snap.exists()) {
                     db.ref('private_rooms/'+roomToExit).remove();
@@ -1128,12 +1129,11 @@ function downloadAPK() {
             });
         }
         
-        // --- Share Room Fixed (Shows Friends List) ---
         function openShareLinkModal() { 
             let url = window.location.origin + window.location.pathname + "?room=" + encodeURIComponent(activeRoom); 
             
             let html = `
-                <p style="margin-bottom:10px; font-size:14px; color:#aaa;">Forward this room to your chat list:</p>
+                <p style="margin-bottom:10px; font-size:14px; color:#aaa;">Forward this room link to your chat list:</p>
                 <div style="max-height: 25vh; overflow-y:auto; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 10px;">
             `;
             
@@ -1142,7 +1142,7 @@ function downloadAPK() {
                 hasFriends = true;
                 html += `<div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
                             <b style="font-size:15px; color:#fff;">${p.peer}</b>
-                            <button class="btn-primary" style="width:auto; padding:6px 15px; margin:0; border-radius:8px; font-size:13px;" onclick="shareRoomToPeer('${p.room}')">Forward</button>
+                            <button class="btn-primary" style="width:auto; padding:6px 15px; margin:0; border-radius:8px; font-size:13px;" onclick="shareRoomToPeer('${p.room}', this)">Forward</button>
                          </div>`;
             });
             if(!hasFriends) html += `<p style="color:#777; font-size:13px; text-align:center;">No friends in your chat list yet.</p>`;
@@ -1154,10 +1154,17 @@ function downloadAPK() {
             showModal("Share Room", html, null, false); 
         }
 
-        function shareRoomToPeer(targetRoom) {
-            let msg = `Join my secure private room: ${activeRoom}\nPassword is required.`;
+        function shareRoomToPeer(targetRoom, btnElement) {
+            let url = window.location.origin + window.location.pathname + "?room=" + encodeURIComponent(activeRoom);
+            let msg = `Join my secure private room: ${url}\nPassword is required.`;
             db.ref('messages/'+targetRoom).push().set({ from: myUser, data: msg, type: 'text', ts: Date.now() });
-            alert("Sent to contact!");
+            
+            if(btnElement) {
+                btnElement.innerText = "Sent ✔️";
+                btnElement.style.background = "#25D366";
+                btnElement.style.color = "white";
+                btnElement.disabled = true;
+            }
         }
 
         function makeLongPressable(el, onLongPress, onClick) { let pressTimer = null; let isDragging = false; let startX, startY; el.addEventListener('touchstart', e => { startX = e.touches[0].clientX; startY = e.touches[0].clientY; isDragging = false; pressTimer = setTimeout(() => { onLongPress(); pressTimer=null; }, 500); }, {passive:true}); el.addEventListener('touchmove', e => { if(Math.abs(e.touches[0].clientX - startX) > 10 || Math.abs(e.touches[0].clientY - startY) > 10) { isDragging = true; if(pressTimer) clearTimeout(pressTimer); } }, {passive:true}); el.addEventListener('touchend', e => { if(pressTimer) { clearTimeout(pressTimer); if(!isDragging && onClick) onClick(e); } }); el.addEventListener('mousedown', e => { pressTimer = setTimeout(() => { onLongPress(); pressTimer=null; }, 500); }); el.addEventListener('mousemove', () => { if(pressTimer) clearTimeout(pressTimer); }); el.addEventListener('mouseup', e => { if(pressTimer) { clearTimeout(pressTimer); if(onClick && e.button===0) onClick(e); } }); el.addEventListener('contextmenu', e => { e.preventDefault(); onLongPress(); }); }
@@ -1166,7 +1173,6 @@ function downloadAPK() {
         
         function openMediaViewer(dataUrl, type) { document.getElementById('iv-img').style.display = 'none'; document.getElementById('iv-video').style.display = 'none'; document.getElementById('iv-video').pause(); if(type === 'image') { document.getElementById('iv-img').src = dataUrl; document.getElementById('iv-img').style.display = 'block'; } else if(type === 'video') { document.getElementById('iv-video').src = dataUrl; document.getElementById('iv-video').style.display = 'block'; document.getElementById('iv-video').play(); } document.getElementById('image-viewer').style.display = 'flex'; }
         
-        // --- Call History Logic ---
         function saveCallHistory(peer, type, status) { 
             db.ref(`call_history/${myUser}`).push().set({ peer: peer, type: type, status: status, ts: Date.now() }); 
         }
@@ -1191,9 +1197,6 @@ function downloadAPK() {
             }); 
         }
 
-        // ==========================================
-        // FIXED STABLE WEBRTC LOGIC (Cross-Device Compatible)
-        // ==========================================
         const iceServers = { iceServers: [{ urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun2.l.google.com:19302' }]};
         let pc = null; let localStream = null; let remoteStream = null; let currentCallRef = null; 
         let isVideoCall = false; let incomingCallObj = null; let isFrontCamera = true; let isSpeakerOn = true; 
@@ -1220,6 +1223,8 @@ function downloadAPK() {
 
         async function startCall(type) { 
             if(!activePeerName) return alert("You can only call directly to contacts!"); 
+            if(pc) return alert("Call already in progress!"); // Prevent double firing
+            
             isVideoCall = (type === 'video'); 
             
             try { 
@@ -1249,13 +1254,13 @@ function downloadAPK() {
 
                 remoteStream = new MediaStream(); document.getElementById('remote-video').srcObject = remoteStream;
                 pc.ontrack = event => { remoteStream.addTrack(event.track); document.getElementById('remote-video').play().catch(e=>console.log(e)); };
-                pc.onconnectionstatechange = () => { if (pc.connectionState === 'connected') startCallTimerUI(); };
+                pc.onconnectionstatechange = () => { if (pc && pc.connectionState === 'connected') startCallTimerUI(); };
 
                 const callId = db.ref(`incoming_calls/${activePeerName}`).push().key;
                 currentCallRef = db.ref(`calls_signaling/${callId}`);
 
                 let callerQueue = [];
-                pc.onicecandidate = event => { if(event.candidate) currentCallRef.child('callerCandidates').push(event.candidate.toJSON()); };
+                pc.onicecandidate = event => { if(event.candidate && currentCallRef) currentCallRef.child('callerCandidates').push(event.candidate.toJSON()); };
 
                 const offer = await pc.createOffer(); await pc.setLocalDescription(offer);
                 
@@ -1270,13 +1275,13 @@ function downloadAPK() {
                 localStorage.setItem('xit_active_call_role', 'outgoing');
 
                 currentCallRef.child('answer').on('value', snap => {
-                    if(snap.exists() && !pc.currentRemoteDescription) {
-                        pc.setRemoteDescription(new RTCSessionDescription(snap.val())).then(() => { callerQueue.forEach(c => pc.addIceCandidate(c)); callerQueue = []; });
+                    if(snap.exists() && pc && !pc.currentRemoteDescription) {
+                        pc.setRemoteDescription(new RTCSessionDescription(snap.val())).then(() => { callerQueue.forEach(c => pc.addIceCandidate(c)); callerQueue = []; }).catch(e=>console.log(e));
                     }
                 });
 
                 currentCallRef.child('calleeCandidates').on('child_added', snap => {
-                    if(snap.exists()) {
+                    if(snap.exists() && pc) {
                         let cand = new RTCIceCandidate(snap.val());
                         if(pc.remoteDescription) pc.addIceCandidate(cand); else callerQueue.push(cand);
                     }
@@ -1294,7 +1299,6 @@ function downloadAPK() {
             } catch(e) { console.error(e); alert("Camera/Mic Permission Denied! Allow permissions in browser."); endCallLocal(); } 
         }
 
-        // --- ENHANCED INCOMING CALL LAYER LISTENERS ---
         function listenForCalls() { 
             db.ref(`incoming_calls/${myUser}`).on('value', snap => { 
                 if(snap.exists() && !pc) { 
@@ -1305,14 +1309,18 @@ function downloadAPK() {
                         ringtoneAudio.play().catch(()=>{}); 
                         notifyUser("Incoming Call", `Call from ${incomingCallObj.caller}`); 
                         
-                        document.getElementById('p-call-avatar').innerText = incomingCallObj.caller[0];
-                        document.getElementById('p-call-username').innerText = incomingCallObj.caller;
-                        document.getElementById('p-call-type').innerText = `INCOMING ${incomingCallObj.type} CALL`;
-                        
-                        // FIX: Explicitly forcing Z-index & Display to ensure it shows over everything
+                        // FIXED JAVASCRIPT CRASH: Move display up & wrap in try-catch
                         let pCallLayer = document.getElementById('premium-call-layer');
                         pCallLayer.style.display = 'flex';
-                        pCallLayer.style.zIndex = '999999'; 
+                        
+                        try {
+                            let cName = incomingCallObj.caller || "Unknown";
+                            document.getElementById('p-call-avatar').innerText = cName.charAt(0).toUpperCase();
+                            document.getElementById('p-call-username').innerText = cName;
+                            document.getElementById('p-call-type').innerText = `INCOMING ${incomingCallObj.type ? incomingCallObj.type.toUpperCase() : 'VOICE'} CALL`;
+                        } catch(e) {
+                            console.error("Popup Render UI error, but display forces true.", e);
+                        }
                     }
                 } else if(!snap.exists()) {
                     if(incomingCallObj) {
@@ -1362,10 +1370,10 @@ function downloadAPK() {
                 remoteStream = new MediaStream(); document.getElementById('remote-video').srcObject = remoteStream;
 
                 pc.ontrack = event => { remoteStream.addTrack(event.track); document.getElementById('remote-video').play().catch(e=>console.log(e)); };
-                pc.onconnectionstatechange = () => { if (pc.connectionState === 'connected') startCallTimerUI(); };
+                pc.onconnectionstatechange = () => { if (pc && pc.connectionState === 'connected') startCallTimerUI(); };
 
                 let calleeQueue = [];
-                pc.onicecandidate = event => { if(event.candidate) currentCallRef.child('calleeCandidates').push(event.candidate.toJSON()); };
+                pc.onicecandidate = event => { if(event.candidate && currentCallRef) currentCallRef.child('calleeCandidates').push(event.candidate.toJSON()); };
 
                 await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
                 
@@ -1377,7 +1385,7 @@ function downloadAPK() {
                 await currentCallRef.child('answer').set({ type: answer.type, sdp: answer.sdp });
 
                 currentCallRef.child('callerCandidates').on('child_added', snap => {
-                    if(snap.exists()) {
+                    if(snap.exists() && pc) {
                         let cand = new RTCIceCandidate(snap.val());
                         if(pc.remoteDescription) pc.addIceCandidate(cand); else calleeQueue.push(cand);
                     }
@@ -1412,6 +1420,7 @@ function downloadAPK() {
             if(currentCallRef) currentCallRef.child('status').set('ended'); else endCallLocal(); 
         }
 
+        // FIXED: Robust state cleanup to prevent call bug loops
         function endCallLocal() { 
             ringtoneAudio.pause(); ringtoneAudio.currentTime = 0;
             stopCallTimerUI();
@@ -1419,7 +1428,13 @@ function downloadAPK() {
             
             if(activePeerName && currentCallRef) { db.ref(`incoming_calls/${activePeerName}`).remove(); }
 
-            if(pc) { pc.close(); pc = null; }
+            if(pc) { 
+                pc.onicecandidate = null;
+                pc.ontrack = null;
+                pc.onconnectionstatechange = null;
+                pc.close(); 
+                pc = null; 
+            }
             if(localStream) { localStream.getTracks().forEach(track => track.stop()); localStream = null; }
             if(remoteStream) { remoteStream.getTracks().forEach(track => track.stop()); remoteStream = null; }
             
@@ -1431,14 +1446,15 @@ function downloadAPK() {
             document.getElementById('toggle-speaker-btn').style.background = 'rgba(255,255,255,0.1)'; document.getElementById('toggle-speaker-btn').style.color = 'white';
             
             if(currentCallRef) { currentCallRef.off(); currentCallRef = null; } 
+            
             db.ref(`incoming_calls/${myUser}`).remove();
             localStorage.removeItem('xit_active_call_role');
+            incomingCallObj = null;
         }
         
         function toggleMute() { if(localStream) { let audioTrack = localStream.getAudioTracks()[0]; if(audioTrack) { audioTrack.enabled = !audioTrack.enabled; let btn = document.getElementById('toggle-mic-btn'); if(audioTrack.enabled) { btn.style.background = 'rgba(255,255,255,0.1)'; btn.style.color = 'white'; } else { btn.style.background = 'rgba(255,71,87,0.2)'; btn.style.color = 'var(--danger)'; } } } }
         function toggleVideo() { if(localStream && isVideoCall) { let videoTrack = localStream.getVideoTracks()[0]; if(videoTrack) { videoTrack.enabled = !videoTrack.enabled; let btn = document.getElementById('toggle-vid-btn'); if(videoTrack.enabled) { btn.style.background = 'rgba(255,255,255,0.1)'; btn.style.color = 'white'; } else { btn.style.background = 'rgba(255,71,87,0.2)'; btn.style.color = 'var(--danger)'; } } } }
         
-        // --- Fixed Flip Camera (Handles Mobile Constraint Errors) ---
         async function flipCamera() { 
             if (!localStream || !isVideoCall) return; 
             isFrontCamera = !isFrontCamera; 
